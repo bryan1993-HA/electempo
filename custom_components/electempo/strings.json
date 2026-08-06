@@ -1,0 +1,16 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configuration ElecTempo",
+        "description": "Renseignez la puissance de votre contrat EDF Tempo.",
+        "data": {
+          "contract_power": "Puissance souscrite (kVA)"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "ElecTempo est déjà configuré. Une seule instance est autorisée."
+    }
+  }
+}

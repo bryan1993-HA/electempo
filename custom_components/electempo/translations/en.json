@@ -1,0 +1,73 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "ElecTempo Setup",
+        "description": "Enter your EDF Tempo contract power.",
+        "data": {
+          "contract_power": "Subscribed power (kVA)"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "ElecTempo is already configured. Only one instance is allowed."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "couleur_actuelle": {
+        "name": "Current color",
+        "state": {
+          "bleu": "Blue",
+          "blanc": "White",
+          "rouge": "Red",
+          "inconnu": "Unknown"
+        }
+      },
+      "couleur_aujourdhui": {
+        "name": "Today's color",
+        "state": {
+          "bleu": "Blue",
+          "blanc": "White",
+          "rouge": "Red",
+          "inconnu": "Unknown"
+        }
+      },
+      "couleur_demain": {
+        "name": "Tomorrow's color",
+        "state": {
+          "bleu": "Blue",
+          "blanc": "White",
+          "rouge": "Red",
+          "inconnu": "Unknown"
+        }
+      },
+      "tarif_actuel": { "name": "Current rate" },
+      "tarif_hc_bleu":  { "name": "Off-peak Blue rate" },
+      "tarif_hp_bleu":  { "name": "Peak Blue rate" },
+      "tarif_hc_blanc": { "name": "Off-peak White rate" },
+      "tarif_hp_blanc": { "name": "Peak White rate" },
+      "tarif_hc_rouge": { "name": "Off-peak Red rate" },
+      "tarif_hp_rouge": { "name": "Peak Red rate" },
+      "source": {
+        "name": "Data source",
+        "state": {
+          "api-couleur-tempo.fr": "api-couleur-tempo.fr",
+          "data.gouv.fr": "data.gouv.fr",
+          "csv+override": "CSV + August 2026 override",
+          "fallback": "Built-in fallback rates",
+          "none": "None"
+        }
+      }
+    },
+    "binary_sensor": {
+      "heures_creuses": {
+        "name": "Off-peak hours",
+        "state": {
+          "on": "Off-peak",
+          "off": "Peak"
+        }
+      }
+    }
+  }
+}

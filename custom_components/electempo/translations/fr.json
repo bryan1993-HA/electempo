@@ -1,0 +1,73 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configuration ElecTempo",
+        "description": "Renseignez la puissance de votre contrat EDF Tempo.",
+        "data": {
+          "contract_power": "Puissance souscrite (kVA)"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "ElecTempo est déjà configuré. Une seule instance est autorisée."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "couleur_actuelle": {
+        "name": "Couleur actuelle",
+        "state": {
+          "bleu": "Bleu",
+          "blanc": "Blanc",
+          "rouge": "Rouge",
+          "inconnu": "Inconnue"
+        }
+      },
+      "couleur_aujourdhui": {
+        "name": "Couleur aujourd'hui",
+        "state": {
+          "bleu": "Bleu",
+          "blanc": "Blanc",
+          "rouge": "Rouge",
+          "inconnu": "Inconnue"
+        }
+      },
+      "couleur_demain": {
+        "name": "Couleur demain",
+        "state": {
+          "bleu": "Bleu",
+          "blanc": "Blanc",
+          "rouge": "Rouge",
+          "inconnu": "Inconnue"
+        }
+      },
+      "tarif_actuel": { "name": "Tarif actuel" },
+      "tarif_hc_bleu":  { "name": "Tarif HC Bleu" },
+      "tarif_hp_bleu":  { "name": "Tarif HP Bleu" },
+      "tarif_hc_blanc": { "name": "Tarif HC Blanc" },
+      "tarif_hp_blanc": { "name": "Tarif HP Blanc" },
+      "tarif_hc_rouge": { "name": "Tarif HC Rouge" },
+      "tarif_hp_rouge": { "name": "Tarif HP Rouge" },
+      "source": {
+        "name": "Source des données",
+        "state": {
+          "api-couleur-tempo.fr": "api-couleur-tempo.fr",
+          "data.gouv.fr": "data.gouv.fr",
+          "csv+override": "CSV + correctif août 2026",
+          "fallback": "Tarifs intégrés (secours)",
+          "none": "Aucune"
+        }
+      }
+    },
+    "binary_sensor": {
+      "heures_creuses": {
+        "name": "Heures Creuses",
+        "state": {
+          "on": "Heures creuses",
+          "off": "Heures pleines"
+        }
+      }
+    }
+  }
+}

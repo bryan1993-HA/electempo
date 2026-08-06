@@ -1,0 +1,12 @@
+{
+  "domain": "electempo",
+  "name": "ElecTempo",
+  "version": "1.0.0",
+  "documentation": "https://github.com/bryan1993-HA/electempo",
+  "issue_tracker": "https://github.com/bryan1993-HA/electempo/issues",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": [],
+  "iot_class": "cloud_polling",
+  "config_flow": true
+}
