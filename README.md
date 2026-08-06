@@ -24,6 +24,8 @@ La plupart des intégrations existantes ignorent cette précision — ElecTempo 
 | 6 tarifs distincts (HC/HP × Bleu/Blanc/Rouge) | ✅ | ❌ |
 | Basculement couleur automatique à 06h00 | ✅ | ⚠️ |
 | Tarifs toujours à jour (correctif auto si CSV périmé) | ✅ | ❌ |
+| Jours restants par couleur (Bleu/Blanc/Rouge) | ✅ | ❌ |
+| Réinitialisation automatique chaque saison | ✅ | ❌ |
 | Plages HC configurables (support double plage) | ✅ | ❌ |
 | Fallback intégré si API indisponible | ✅ | ❌ |
 | Source des données visible | ✅ | ❌ |
@@ -63,10 +65,25 @@ Les états possibles : `bleu` · `blanc` · `rouge` · `inconnu`
 
 > Attributs : couleur actuelle + tarif en cours
 
+### 📅 Jours de saison (sept → août)
+
+| Entité | Quota | Description |
+|--------|-------|-------------|
+| `sensor.electempo_jours_bleu_restants` | 300 | Jours Bleu restants dans la saison |
+| `sensor.electempo_jours_blanc_restants` | 43 | Jours Blanc restants dans la saison |
+| `sensor.electempo_jours_rouge_restants` | **22** | Jours Rouge restants ⚠️ |
+
+> Attributs disponibles sur chaque capteur : `quota_total` + `utilises`
+>
+> Les capteurs "jours utilisés" sont disponibles mais masqués par défaut — activables dans **Paramètres → Entités**.
+>
+> **Réinitialisation automatique** chaque 1er septembre — aucune mise à jour requise.
+
 ### 🔌 Diagnostic
 
 | Entité | Description |
 |--------|-------------|
+| `sensor.electempo_saison` | Saison en cours (ex: `2025-2026`) |
 | `sensor.electempo_source_donnees` | Source utilisée : `api-couleur-tempo.fr` · `data.gouv.fr` · `csv+override` · `fallback` |
 
 ---
@@ -188,7 +205,7 @@ data.gouv.fr CSV ──► 6 tarifs officiels EDF
 
 | Source | Données | Fréquence |
 |--------|---------|-----------|
-| [api-couleur-tempo.fr](https://www.api-couleur-tempo.fr) | Couleurs Tempo | Au besoin (cache) |
+| [api-couleur-tempo.fr](https://www.api-couleur-tempo.fr) | Couleurs Tempo + historique saison | Au besoin (cache) |
 | [data.gouv.fr](https://www.data.gouv.fr/fr/datasets/r/0c3d1d36-c412-4620-8566-e5cbb4fa2b5a) | Tarifs EDF officiels (CSV) | 1×/jour |
 | Fallback intégré | Tarifs août 2026 | Si CSV indisponible ou périmé |
 
