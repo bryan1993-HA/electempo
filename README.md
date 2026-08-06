@@ -1,6 +1,8 @@
 <div align="center">
 
-# ⚡ ElecTempo
+<img src="icon.png" alt="ElecTempo" width="140"/>
+
+# ElecTempo
 
 **L'intégration Home Assistant pour le contrat EDF Tempo**
 Couleurs, tarifs précis HC/HP, suivi énergétique par session — toujours à jour.
@@ -50,12 +52,12 @@ Les états possibles : `bleu` · `blanc` · `rouge` · `inconnu`
 | Entité | Valeur août 2026 |
 |--------|-----------------|
 | `sensor.electempo_tarif_actuel` | Tarif appliqué en ce moment |
-| `sensor.electempo_tarif_hc_bleu` | 0,1356 €/kWh |
-| `sensor.electempo_tarif_hp_bleu` | 0,1654 €/kWh |
-| `sensor.electempo_tarif_hc_blanc` | 0,1536 €/kWh |
-| `sensor.electempo_tarif_hp_blanc` | 0,1921 €/kWh |
-| `sensor.electempo_tarif_hc_rouge` | 0,1615 €/kWh |
-| `sensor.electempo_tarif_hp_rouge` | **0,7295 €/kWh** |
+| `sensor.electempo_tarif_blanc_hc` | 0,1536 €/kWh |
+| `sensor.electempo_tarif_blanc_hp` | 0,1921 €/kWh |
+| `sensor.electempo_tarif_bleu_hc` | 0,1356 €/kWh |
+| `sensor.electempo_tarif_bleu_hp` | 0,1654 €/kWh |
+| `sensor.electempo_tarif_rouge_hc` | 0,1615 €/kWh |
+| `sensor.electempo_tarif_rouge_hp` | **0,7295 €/kWh** |
 
 ### 🕐 Période
 
@@ -162,12 +164,12 @@ automation:
 ```yaml
 # Dans une action TTS ou notification
 message: >
-  {% set t_hc_bleu  = states('sensor.electempo_tarif_hc_bleu')  | float(0) %}
-  {% set t_hp_bleu  = states('sensor.electempo_tarif_hp_bleu')  | float(0) %}
-  {% set t_hc_blanc = states('sensor.electempo_tarif_hc_blanc') | float(0) %}
-  {% set t_hp_blanc = states('sensor.electempo_tarif_hp_blanc') | float(0) %}
-  {% set t_hc_rouge = states('sensor.electempo_tarif_hc_rouge') | float(0) %}
-  {% set t_hp_rouge = states('sensor.electempo_tarif_hp_rouge') | float(0) %}
+  {% set t_hc_bleu  = states('sensor.electempo_tarif_bleu_hc')  | float(0) %}
+  {% set t_hp_bleu  = states('sensor.electempo_tarif_bleu_hp')  | float(0) %}
+  {% set t_hc_blanc = states('sensor.electempo_tarif_blanc_hc') | float(0) %}
+  {% set t_hp_blanc = states('sensor.electempo_tarif_blanc_hp') | float(0) %}
+  {% set t_hc_rouge = states('sensor.electempo_tarif_rouge_hc') | float(0) %}
+  {% set t_hp_rouge = states('sensor.electempo_tarif_rouge_hp') | float(0) %}
   Tarif actuel : {{ states('sensor.electempo_tarif_actuel') }} €/kWh
   Couleur : {{ states('sensor.electempo_couleur_actuelle') }}
   Période : {{ 'Heures Creuses' if is_state('binary_sensor.electempo_heures_creuses', 'on') else 'Heures Pleines' }}
