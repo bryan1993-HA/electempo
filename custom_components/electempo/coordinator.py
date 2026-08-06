@@ -219,9 +219,15 @@ class ElecTempoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             resp = _get(url, timeout=15)
             resp.raise_for_status()
             days = resp.json()
+            if isinstance(days, dict):
+                days = days.get("data", days.get("joursTempo", days.get("results", [])))
 
+            current_periode = _season_label(season_start)
             counts: dict[str, int] = {COLOR_BLEU: 0, COLOR_BLANC: 0, COLOR_ROUGE: 0}
             for entry in days:
+                # Filtre sur la saison courante (l'API retourne tout l'historique)
+                if entry.get("periode") != current_periode:
+                    continue
                 code = entry.get("codeJour", 0)
                 color = TEMPO_COLOR_CODES.get(code)
                 if color and color != COLOR_INCONNU:

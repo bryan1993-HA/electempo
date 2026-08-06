@@ -70,32 +70,12 @@ SENSOR_DESCRIPTIONS: tuple[ElecTempoSensorDescription, ...] = (
         icon="mdi:currency-eur",
     ),
 
-    # ── Tarifs Bleu ───────────────────────────────────────────────────────────
-    ElecTempoSensorDescription(
-        key="tarif_hc_bleu",
-        data_key="tarifs",
-        sub_key="hc_bleu",
-        name="Tarif HC Bleu",
-        native_unit_of_measurement=CURRENCY_EUR_KWH,
-        state_class=SensorStateClass.MEASUREMENT,
-        icon="mdi:weather-night",
-    ),
-    ElecTempoSensorDescription(
-        key="tarif_hp_bleu",
-        data_key="tarifs",
-        sub_key="hp_bleu",
-        name="Tarif HP Bleu",
-        native_unit_of_measurement=CURRENCY_EUR_KWH,
-        state_class=SensorStateClass.MEASUREMENT,
-        icon="mdi:weather-sunny",
-    ),
-
     # ── Tarifs Blanc ──────────────────────────────────────────────────────────
     ElecTempoSensorDescription(
         key="tarif_hc_blanc",
         data_key="tarifs",
         sub_key="hc_blanc",
-        name="Tarif HC Blanc",
+        name="Tarif Blanc HC",
         native_unit_of_measurement=CURRENCY_EUR_KWH,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:weather-night",
@@ -104,7 +84,27 @@ SENSOR_DESCRIPTIONS: tuple[ElecTempoSensorDescription, ...] = (
         key="tarif_hp_blanc",
         data_key="tarifs",
         sub_key="hp_blanc",
-        name="Tarif HP Blanc",
+        name="Tarif Blanc HP",
+        native_unit_of_measurement=CURRENCY_EUR_KWH,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:weather-sunny",
+    ),
+
+    # ── Tarifs Bleu ───────────────────────────────────────────────────────────
+    ElecTempoSensorDescription(
+        key="tarif_hc_bleu",
+        data_key="tarifs",
+        sub_key="hc_bleu",
+        name="Tarif Bleu HC",
+        native_unit_of_measurement=CURRENCY_EUR_KWH,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:weather-night",
+    ),
+    ElecTempoSensorDescription(
+        key="tarif_hp_bleu",
+        data_key="tarifs",
+        sub_key="hp_bleu",
+        name="Tarif Bleu HP",
         native_unit_of_measurement=CURRENCY_EUR_KWH,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:weather-sunny",
@@ -115,7 +115,7 @@ SENSOR_DESCRIPTIONS: tuple[ElecTempoSensorDescription, ...] = (
         key="tarif_hc_rouge",
         data_key="tarifs",
         sub_key="hc_rouge",
-        name="Tarif HC Rouge",
+        name="Tarif Rouge HC",
         native_unit_of_measurement=CURRENCY_EUR_KWH,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:weather-night",
@@ -124,7 +124,7 @@ SENSOR_DESCRIPTIONS: tuple[ElecTempoSensorDescription, ...] = (
         key="tarif_hp_rouge",
         data_key="tarifs",
         sub_key="hp_rouge",
-        name="Tarif HP Rouge",
+        name="Tarif Rouge HP",
         native_unit_of_measurement=CURRENCY_EUR_KWH,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:weather-sunny",
@@ -240,11 +240,12 @@ class ElecTempoSensor(CoordinatorEntity[ElecTempoCoordinator], SensorEntity):
         self._attr_entity_registry_enabled_default = (
             description.entity_registry_enabled_default
         )
+        power = entry.data.get("contract_power", "?")
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=NAME,
-            manufacturer="EDF",
-            model="Tempo",
+            manufacturer="bryan1993-HA",
+            model=f"EDF Tempo {power} kVA",
         )
 
     @property

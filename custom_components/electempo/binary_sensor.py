@@ -38,11 +38,12 @@ class ElecTempoHCBinarySensor(CoordinatorEntity[ElecTempoCoordinator], BinarySen
     ) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_heures_creuses"
+        power = entry.data.get("contract_power", "?")
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=NAME,
-            manufacturer="EDF",
-            model="Tempo",
+            manufacturer="bryan1993-HA",
+            model=f"EDF Tempo {power} kVA",
         )
 
     @property
