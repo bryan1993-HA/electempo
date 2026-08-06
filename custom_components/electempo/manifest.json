@@ -1,7 +1,7 @@
 {
   "domain": "electempo",
   "name": "ElecTempo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "documentation": "https://github.com/bryan1993-HA/electempo",
   "issue_tracker": "https://github.com/bryan1993-HA/electempo/issues",
   "requirements": [],

@@ -35,6 +35,14 @@ TEMPO_COLOR_CODES = {
 
 # API — primary source
 API_COULEUR_TEMPO_URL = "https://www.api-couleur-tempo.fr/api/jourTempo/{date}"
+API_COULEUR_TEMPO_RANGE_URL = "https://www.api-couleur-tempo.fr/api/joursTempo?dateDebut={start}&dateFin={end}"
+
+# Quotas de jours par saison (fixés par EDF depuis 1996, saison = 1er sept → 31 août)
+TEMPO_SAISON_QUOTAS = {
+    "bleu":  300,
+    "blanc":  43,
+    "rouge":  22,
+}
 
 # Tariff CSV from data.gouv.fr (EDF Tempo)
 TARIF_TEMPO_CSV_URL = "https://www.data.gouv.fr/fr/datasets/r/0c3d1d36-c412-4620-8566-e5cbb4fa2b5a"

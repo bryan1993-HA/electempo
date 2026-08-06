@@ -5,19 +5,18 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.sensor import (
-    SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfEnergy
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, NAME
+from .const import DOMAIN, NAME, TEMPO_SAISON_QUOTAS
 from .coordinator import ElecTempoCoordinator
 
 CURRENCY_EUR_KWH = "€/kWh"
@@ -27,9 +26,21 @@ CURRENCY_EUR_KWH = "€/kWh"
 class ElecTempoSensorDescription(SensorEntityDescription):
     data_key: str
     sub_key: str | None = None
+    entity_registry_enabled_default: bool = True
 
+
+# ─── Ordre d'affichage logique ────────────────────────────────────────────────
+#  1. Couleurs
+#  2. Tarif actuel
+#  3. Tarifs HC/HP par couleur (Bleu → Blanc → Rouge)
+#  4. Saison : jours restants  (affiché par défaut)
+#  5. Saison : jours utilisés  (masqués par défaut, disponibles si besoin)
+#  6. Diagnostic
+# ─────────────────────────────────────────────────────────────────────────────
 
 SENSOR_DESCRIPTIONS: tuple[ElecTempoSensorDescription, ...] = (
+
+    # ── Couleurs ──────────────────────────────────────────────────────────────
     ElecTempoSensorDescription(
         key="couleur_actuelle",
         data_key="couleur_actuelle",
@@ -48,6 +59,8 @@ SENSOR_DESCRIPTIONS: tuple[ElecTempoSensorDescription, ...] = (
         name="Couleur demain",
         icon="mdi:calendar-tomorrow",
     ),
+
+    # ── Tarif courant ─────────────────────────────────────────────────────────
     ElecTempoSensorDescription(
         key="tarif_actuel",
         data_key="tarif_actuel",
@@ -56,6 +69,8 @@ SENSOR_DESCRIPTIONS: tuple[ElecTempoSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:currency-eur",
     ),
+
+    # ── Tarifs Bleu ───────────────────────────────────────────────────────────
     ElecTempoSensorDescription(
         key="tarif_hc_bleu",
         data_key="tarifs",
@@ -74,6 +89,8 @@ SENSOR_DESCRIPTIONS: tuple[ElecTempoSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:weather-sunny",
     ),
+
+    # ── Tarifs Blanc ──────────────────────────────────────────────────────────
     ElecTempoSensorDescription(
         key="tarif_hc_blanc",
         data_key="tarifs",
@@ -92,6 +109,8 @@ SENSOR_DESCRIPTIONS: tuple[ElecTempoSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:weather-sunny",
     ),
+
+    # ── Tarifs Rouge ──────────────────────────────────────────────────────────
     ElecTempoSensorDescription(
         key="tarif_hc_rouge",
         data_key="tarifs",
@@ -110,11 +129,76 @@ SENSOR_DESCRIPTIONS: tuple[ElecTempoSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:weather-sunny",
     ),
+
+    # ── Jours restants (affichés par défaut) ──────────────────────────────────
+    ElecTempoSensorDescription(
+        key="jours_bleu_restants",
+        data_key="jours_bleu_restants",
+        name="Jours Bleu restants",
+        native_unit_of_measurement="jours",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:calendar-check",
+    ),
+    ElecTempoSensorDescription(
+        key="jours_blanc_restants",
+        data_key="jours_blanc_restants",
+        name="Jours Blanc restants",
+        native_unit_of_measurement="jours",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:calendar-check",
+    ),
+    ElecTempoSensorDescription(
+        key="jours_rouge_restants",
+        data_key="jours_rouge_restants",
+        name="Jours Rouge restants",
+        native_unit_of_measurement="jours",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:calendar-alert",
+    ),
+
+    # ── Jours utilisés (masqués par défaut) ───────────────────────────────────
+    ElecTempoSensorDescription(
+        key="jours_bleu",
+        data_key="jours_bleu",
+        name="Jours Bleu utilisés",
+        native_unit_of_measurement="jours",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon="mdi:calendar-minus",
+        entity_registry_enabled_default=False,
+    ),
+    ElecTempoSensorDescription(
+        key="jours_blanc",
+        data_key="jours_blanc",
+        name="Jours Blanc utilisés",
+        native_unit_of_measurement="jours",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon="mdi:calendar-minus",
+        entity_registry_enabled_default=False,
+    ),
+    ElecTempoSensorDescription(
+        key="jours_rouge",
+        data_key="jours_rouge",
+        name="Jours Rouge utilisés",
+        native_unit_of_measurement="jours",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        icon="mdi:calendar-minus",
+        entity_registry_enabled_default=False,
+    ),
+
+    # ── Diagnostic ────────────────────────────────────────────────────────────
+    ElecTempoSensorDescription(
+        key="saison",
+        data_key="saison",
+        name="Saison",
+        icon="mdi:calendar-range",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
     ElecTempoSensorDescription(
         key="source",
         data_key="source",
         name="Source des données",
         icon="mdi:database-check",
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
 )
 
@@ -123,13 +207,6 @@ _COLOR_ICONS = {
     "blanc":   "mdi:circle-outline",
     "rouge":   "mdi:circle",
     "inconnu": "mdi:help-circle-outline",
-}
-
-_COLOR_COLORS = {
-    "bleu":    "#4488FF",
-    "blanc":   "#CCCCCC",
-    "rouge":   "#FF3333",
-    "inconnu": "#888888",
 }
 
 
@@ -160,6 +237,9 @@ class ElecTempoSensor(CoordinatorEntity[ElecTempoCoordinator], SensorEntity):
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{entry.entry_id}_{description.key}"
+        self._attr_entity_registry_enabled_default = (
+            description.entity_registry_enabled_default
+        )
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=NAME,
@@ -186,3 +266,20 @@ class ElecTempoSensor(CoordinatorEntity[ElecTempoCoordinator], SensorEntity):
             color = self.native_value or "inconnu"
             return _COLOR_ICONS.get(color, "mdi:help-circle-outline")
         return self.entity_description.icon or "mdi:flash"
+
+    @property
+    def extra_state_attributes(self) -> dict | None:
+        key = self.entity_description.key
+        if key == "jours_rouge_restants":
+            quota = TEMPO_SAISON_QUOTAS["rouge"]
+            used = (self.coordinator.data or {}).get("jours_rouge", 0)
+            return {"quota_total": quota, "utilises": used}
+        if key == "jours_blanc_restants":
+            quota = TEMPO_SAISON_QUOTAS["blanc"]
+            used = (self.coordinator.data or {}).get("jours_blanc", 0)
+            return {"quota_total": quota, "utilises": used}
+        if key == "jours_bleu_restants":
+            quota = TEMPO_SAISON_QUOTAS["bleu"]
+            used = (self.coordinator.data or {}).get("jours_bleu", 0)
+            return {"quota_total": quota, "utilises": used}
+        return None

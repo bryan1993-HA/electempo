@@ -14,8 +14,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    API_COULEUR_TEMPO_RANGE_URL,
     API_COULEUR_TEMPO_URL,
+    COLOR_BLEU,
+    COLOR_BLANC,
     COLOR_INCONNU,
+    COLOR_ROUGE,
     CONF_CONTRACT_POWER,
     CONF_HC_RANGES,
     DEFAULT_HC_RANGES,
@@ -25,6 +29,7 @@ from .const import (
     TARIF_TEMPO_CSV_URL,
     TEMPO_COLOR_CODES,
     TEMPO_DAY_START_HOUR,
+    TEMPO_SAISON_QUOTAS,
     TARIFF_REFRESH_DAYS,
 )
 
@@ -70,6 +75,18 @@ def _is_hc(ranges_str: str) -> bool:
     return False
 
 
+def _get_season_start(today: date) -> date:
+    """Return the start date of the current Tempo season (Sept 1)."""
+    if today.month >= 9:
+        return date(today.year, 9, 1)
+    return date(today.year - 1, 9, 1)
+
+
+def _season_label(season_start: date) -> str:
+    """Return e.g. '2025-2026'."""
+    return f"{season_start.year}-{season_start.year + 1}"
+
+
 class ElecTempoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Fetches EDF Tempo colors and tariffs, refreshes every minute."""
 
@@ -85,6 +102,10 @@ class ElecTempoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._tariffs: dict[str, float] = {}
         self._last_tariff_fetch: datetime | None = None
         self._last_source: str = "none"
+        # Season day counts cache
+        self._season_counts: dict[str, int] = {}
+        self._last_season_fetch: datetime | None = None
+        self._last_season_start: date | None = None
 
     # ------------------------------------------------------------------
     # Main update
@@ -112,8 +133,12 @@ class ElecTempoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             period = "hc" if est_hc else "hp"
 
             await self._refresh_tariffs_if_needed()
+            await self._refresh_season_if_needed(today)
 
             tarif_actuel = self._tariffs.get(f"{period}_{couleur_actuelle}")
+
+            season_start = _get_season_start(today)
+            counts = self._season_counts
 
             return {
                 "couleur_aujourdhui": color_today,
@@ -124,6 +149,14 @@ class ElecTempoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "tarif_actuel": tarif_actuel,
                 "tarifs": dict(self._tariffs),
                 "source": self._last_source,
+                # Saison
+                "saison": _season_label(season_start),
+                "jours_bleu":  counts.get(COLOR_BLEU, 0),
+                "jours_blanc": counts.get(COLOR_BLANC, 0),
+                "jours_rouge": counts.get(COLOR_ROUGE, 0),
+                "jours_bleu_restants":  max(0, TEMPO_SAISON_QUOTAS[COLOR_BLEU]  - counts.get(COLOR_BLEU, 0)),
+                "jours_blanc_restants": max(0, TEMPO_SAISON_QUOTAS[COLOR_BLANC] - counts.get(COLOR_BLANC, 0)),
+                "jours_rouge_restants": max(0, TEMPO_SAISON_QUOTAS[COLOR_ROUGE] - counts.get(COLOR_ROUGE, 0)),
             }
         except Exception as err:
             raise UpdateFailed(f"ElecTempo update failed: {err}") from err
@@ -159,6 +192,53 @@ class ElecTempoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "ElecTempo: failed to fetch color for %s: %s", date_str, exc
             )
             return COLOR_INCONNU
+
+    # ------------------------------------------------------------------
+    # Season day counts
+    # ------------------------------------------------------------------
+
+    async def _refresh_season_if_needed(self, today: date) -> None:
+        season_start = _get_season_start(today)
+        needs_refresh = (
+            not self._season_counts
+            or self._last_season_fetch is None
+            or self._last_season_start != season_start       # new season started
+            or datetime.now() - self._last_season_fetch > timedelta(hours=6)
+        )
+        if needs_refresh:
+            await self.hass.async_add_executor_job(
+                self._fetch_season_sync, season_start, today
+            )
+
+    def _fetch_season_sync(self, season_start: date, today: date) -> None:
+        url = API_COULEUR_TEMPO_RANGE_URL.format(
+            start=season_start.strftime("%Y-%m-%d"),
+            end=today.strftime("%Y-%m-%d"),
+        )
+        try:
+            resp = _get(url, timeout=15)
+            resp.raise_for_status()
+            days = resp.json()
+
+            counts: dict[str, int] = {COLOR_BLEU: 0, COLOR_BLANC: 0, COLOR_ROUGE: 0}
+            for entry in days:
+                code = entry.get("codeJour", 0)
+                color = TEMPO_COLOR_CODES.get(code)
+                if color and color != COLOR_INCONNU:
+                    counts[color] = counts.get(color, 0) + 1
+
+            self._season_counts = counts
+            self._last_season_fetch = datetime.now()
+            self._last_season_start = season_start
+            _LOGGER.info(
+                "ElecTempo season %s: bleu=%d blanc=%d rouge=%d",
+                _season_label(season_start),
+                counts[COLOR_BLEU],
+                counts[COLOR_BLANC],
+                counts[COLOR_ROUGE],
+            )
+        except Exception as exc:
+            _LOGGER.warning("ElecTempo: season fetch failed: %s", exc)
 
     # ------------------------------------------------------------------
     # Tariff fetching
