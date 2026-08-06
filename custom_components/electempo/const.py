@@ -13,8 +13,12 @@ CONTRACT_POWERS = ["3", "6", "9", "12", "15", "18", "24", "30", "36"]
 # Tempo schedule (EDF standard)
 TEMPO_DAY_START_HOUR = 6     # new color day starts at 06:00
 TEMPO_TOMORROW_AVAIL_HOUR = 11  # tomorrow's color available from 11:00
-HC_START_HOUR = 22           # off-peak starts at 22:00
-HC_END_HOUR = 6              # off-peak ends at 06:00
+
+# HC configuration
+CONF_HC_RANGES = "hc_ranges"
+# EDF Tempo: HC toujours 22:00-06:00 pour tous les abonnés Tempo
+# Format: "HH:MM-HH:MM" séparés par des virgules pour plusieurs plages
+DEFAULT_HC_RANGES = "22:00-06:00"
 
 # Colors
 COLOR_BLEU = "bleu"

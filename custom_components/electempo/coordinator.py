@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import csv
 import logging
+import re
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -16,8 +17,8 @@ from .const import (
     API_COULEUR_TEMPO_URL,
     COLOR_INCONNU,
     CONF_CONTRACT_POWER,
-    HC_END_HOUR,
-    HC_START_HOUR,
+    CONF_HC_RANGES,
+    DEFAULT_HC_RANGES,
     NAME,
     TARIF_FALLBACK_VARIABLE,
     TARIF_HP_ROUGE_MIN_AOU_2026,
@@ -36,9 +37,37 @@ _HTTP_HEADERS = {
     )
 }
 
+_HC_RANGE_RE = re.compile(
+    r'^([01]?\d|2[0-3]):[0-5]\d-([01]?\d|2[0-3]):[0-5]\d$'
+)
+
 
 def _get(url: str, timeout: int = 10) -> requests.Response:
     return requests.get(url, headers=_HTTP_HEADERS, timeout=timeout)
+
+
+def _parse_time(s: str):
+    return datetime.strptime(s.strip(), "%H:%M").time()
+
+
+def _time_in_range(now, start, end) -> bool:
+    """True if now is in [start, end[, handles overnight ranges."""
+    if start <= end:
+        return start <= now < end
+    return start <= now or now < end
+
+
+def _is_hc(ranges_str: str) -> bool:
+    """Return True if current time falls within any configured HC range."""
+    now = datetime.now().time()
+    for r in ranges_str.split(","):
+        r = r.strip()
+        if not _HC_RANGE_RE.match(r):
+            continue
+        start_s, end_s = r.split("-")
+        if _time_in_range(now, _parse_time(start_s), _parse_time(end_s)):
+            return True
+    return False
 
 
 class ElecTempoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -77,7 +106,9 @@ class ElecTempoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 color_yesterday if now_hour < TEMPO_DAY_START_HOUR else color_today
             )
 
-            est_hc = now_hour >= HC_START_HOUR or now_hour < HC_END_HOUR
+            # HC/HP — uses configurable ranges from options, default 22:00-06:00
+            hc_ranges = self.config_entry.options.get(CONF_HC_RANGES, DEFAULT_HC_RANGES)
+            est_hc = _is_hc(hc_ranges)
             period = "hc" if est_hc else "hp"
 
             await self._refresh_tariffs_if_needed()
@@ -89,6 +120,7 @@ class ElecTempoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "couleur_demain": color_tomorrow,
                 "couleur_actuelle": couleur_actuelle,
                 "est_hc": est_hc,
+                "hc_ranges": hc_ranges,
                 "tarif_actuel": tarif_actuel,
                 "tarifs": dict(self._tariffs),
                 "source": self._last_source,
